@@ -40,16 +40,18 @@ namespace SampleProject.Api
             services.AddSingleton(jwtSettings);
             var key = Encoding.ASCII.GetBytes(jwtSettings.Secret);
 
+            services.AddHttpContextAccessor();
+
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("JwtValidate", (policy) => {
+                options.AddPolicy("Bearer", (policy) => {
+                    policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                    policy.RequireAuthenticatedUser();
                     policy.Requirements.Add(new JwtRequirement());
                 });
 
-                options.DefaultPolicy = options.GetPolicy("JwtValidate");
+                options.DefaultPolicy = options.GetPolicy("Bearer");
             });
-
-            services.AddHttpContextAccessor();
 
             services.AddSingleton<IAuthorizationHandler, JwtHandler>();
 

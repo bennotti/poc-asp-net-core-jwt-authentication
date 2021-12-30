@@ -54,9 +54,6 @@ namespace SampleProject.Infrastructure.Authorization.Handle
             }
             catch
             {
-                // não faça nada se a validação jwt falhar
-                // conta não está anexada ao contexto, então a solicitação não terá acesso a rotas seguras
-
                 context.Fail();
             }
 

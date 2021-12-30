@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Newtonsoft.Json;
 using SampleProject.Api;
-using SampleProject.Core.BusinessRules.Interfaces;
-using SampleProjectLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +12,10 @@ using Xunit;
 
 namespace SampleProjectxUnitTest
 {
-    public class WeatherForecastControllerTest
+    public class JwtAuthenticationControllerTest
     {
         private readonly HttpClient _client;
-        public WeatherForecastControllerTest()
+        public JwtAuthenticationControllerTest()
         {
             var server = new TestServer(new WebHostBuilder()
                 .UseEnvironment("Development")
@@ -25,15 +23,15 @@ namespace SampleProjectxUnitTest
             _client = server.CreateClient();
         }
         [Fact(DisplayName = "should be pass and Ok status code")]
-        [Trait("WeatherForecastControllerTest", "Defined")]
+        [Trait("JwtAuthenticationController", "Defined")]
         public async Task ServiceTest_with_service_defined()
         {
-            var request = new HttpRequestMessage(new HttpMethod("GET"), "/WeatherForecast/");
+            var request = new HttpRequestMessage(new HttpMethod("GET"), "/JwtAuthentication/");
 
             // Act
             var response = await _client.SendAsync(request);
             string content = await response.Content.ReadAsStringAsync();
-            var dataResponse = JsonConvert.DeserializeObject<IEnumerable<WeatherForecast>>(content);
+            var dataResponse = JsonConvert.DeserializeObject<IEnumerable<string>>(content);
 
             // Assert
             response.EnsureSuccessStatusCode();

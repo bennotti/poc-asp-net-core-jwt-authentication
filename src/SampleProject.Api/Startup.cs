@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -10,7 +11,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SampleProject.Core.Settings;
-using SampleProject.Infrastructure.Middleware;
+using SampleProject.Infrastructure.Authorization;
+using SampleProject.Infrastructure.Authorization.Handle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +40,19 @@ namespace SampleProject.Api
             services.AddSingleton(jwtSettings);
             var key = Encoding.ASCII.GetBytes(jwtSettings.Secret);
 
-            services.AddAuthorization();
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("JwtValidate", (policy) => {
+                    policy.Requirements.Add(new JwtRequirement());
+                });
+
+                options.DefaultPolicy = options.GetPolicy("JwtValidate");
+            });
+
+            services.AddHttpContextAccessor();
+
+            services.AddSingleton<IAuthorizationHandler, JwtHandler>();
+
             services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -70,7 +84,6 @@ namespace SampleProject.Api
 
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseMiddleware<JwtMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {

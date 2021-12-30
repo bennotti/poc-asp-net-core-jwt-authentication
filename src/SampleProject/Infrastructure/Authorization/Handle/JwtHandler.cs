@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using SampleProject.Core.Settings;
 using System;
@@ -8,36 +9,37 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SampleProject.Infrastructure.Middleware
+namespace SampleProject.Infrastructure.Authorization.Handle
 {
-    public class JwtMiddleware
+    public class JwtHandler : AuthorizationHandler<JwtRequirement>
     {
-        private readonly RequestDelegate _next;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly JwtSettings _tokenConfig;
 
-        public JwtMiddleware(RequestDelegate next, JwtSettings tokenConfig)
+        public JwtHandler(IHttpContextAccessor httpContextAccessor, JwtSettings tokenConfig)
         {
             _tokenConfig = tokenConfig;
-            _next = next;
+            _httpContextAccessor = httpContextAccessor;
         }
-
-        public async Task Invoke(HttpContext context)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, JwtRequirement requirement)
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if (_httpContextAccessor == null)
+            {
+                context.Fail();
+                return;
+            }
+            var authorization = _httpContextAccessor.HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if (string.IsNullOrEmpty(authorization))
+            {
+                context.Fail();
+                return;
+            }
 
-            if (token != null)
-                await validateTokenDb(context, jwtTokensRepository, token);
-
-            await _next(context);
-        }
-
-        private async Task validateTokenDb(HttpContext context, IJwtTokensRepository jwtTokensRepository, string token)
-        {
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var key = Encoding.ASCII.GetBytes(_tokenConfig.Secret);
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                tokenHandler.ValidateToken(authorization, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
@@ -48,22 +50,19 @@ namespace SampleProject.Infrastructure.Middleware
                     SaveSigninToken = true
                 }, out SecurityToken validatedToken);
 
-                //validar token no banco de dados
-                var jwtTokenBd = await jwtTokensRepository.ObterPorToken(token);
-
-                if (jwtTokenBd != null && jwtTokenBd.DataExpiracao >= DateTime.UtcNow && !jwtTokenBd.Revogada)
-                {
-                    // validar vencimento
-                    // validar rebogado
-                    // anexar conta ao contexto na validação jwt bem-sucedida
-                    context.Items["IsValidToken"] = true;
-                }
+                context.Succeed(requirement);
             }
             catch
             {
                 // não faça nada se a validação jwt falhar
                 // conta não está anexada ao contexto, então a solicitação não terá acesso a rotas seguras
+
+                context.Fail();
             }
+
+            
+
+            await Task.CompletedTask;
         }
     }
 }

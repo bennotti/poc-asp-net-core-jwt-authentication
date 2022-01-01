@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SampleProject.Infrastructure.Authorization
 {
-    public class JwtRequirement : IAuthorizationRequirement
+    public class JwtAuthorizationRequirement : IAuthorizationRequirement
     {
 
     }

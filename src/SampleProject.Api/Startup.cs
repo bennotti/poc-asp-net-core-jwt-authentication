@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SampleProject.Core.Settings;
+using SampleProject.Infrastructure.Authentication.Handle;
 using SampleProject.Infrastructure.Authorization;
 using SampleProject.Infrastructure.Authorization.Handle;
 using System;
@@ -47,15 +49,16 @@ namespace SampleProject.Api
                 options.AddPolicy("Bearer", (policy) => {
                     policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
                     policy.RequireAuthenticatedUser();
-                    policy.Requirements.Add(new JwtRequirement());
+                    policy.Requirements.Add(new JwtAuthorizationRequirement());
                 });
 
                 options.DefaultPolicy = options.GetPolicy("Bearer");
             });
 
-            services.AddSingleton<IAuthorizationHandler, JwtHandler>();
+            services.AddSingleton<IAuthorizationHandler, JwtAuthorizationHandler>();
 
             services.AddAuthentication(options => {
+                options.DefaultScheme = "SampleProjectAuthentication";
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
@@ -69,7 +72,8 @@ namespace SampleProject.Api
                     ValidateIssuer = false,
                     ValidateAudience = false
                 };
-            });
+            })
+            .AddScheme<AuthenticationSchemeOptions, SampleProjectAuthenticationHandler>("SampleProjectAuthentication", null); ;
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

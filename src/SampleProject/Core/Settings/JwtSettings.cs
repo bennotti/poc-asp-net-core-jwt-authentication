@@ -9,6 +9,16 @@ namespace SampleProject.Core.Settings
         public string Secret { get; set; }
         public string Audience { get; set; }
         public string Issuer { get; set; }
-        public int Seconds { get; set; }
+        private int _expireInSeconds;
+        public int? ExpireInSeconds {
+            get { return _expireInSeconds; } 
+            set {
+                if (value.HasValue && value.Value > 0) {
+                    _expireInSeconds = value.Value;
+                } else {
+                    _expireInSeconds = 900;
+                }
+            }
+        }
     }
 }

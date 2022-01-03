@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SampleProject.Core.Settings;
+using SampleProject.Infrastructure.Authentication;
 using SampleProject.Infrastructure.Authentication.Handle;
 using SampleProject.Infrastructure.Authorization;
 using SampleProject.Infrastructure.Authorization.Handle;
@@ -39,13 +40,13 @@ namespace SampleProject.Api
 
             var jwtSettings = new JwtSettings();
             new ConfigureFromConfigurationOptions<JwtSettings>(Configuration.GetSection("JwtSettings")).Configure(jwtSettings);
+            var jwtBuilder = new JwtBuilder(jwtSettings);
             services.AddSingleton(jwtSettings);
-            var key = Encoding.ASCII.GetBytes(jwtSettings.Secret);
+            services.AddSingleton(jwtBuilder);
 
             services.AddHttpContextAccessor();
 
-            services.AddAuthorization(options =>
-            {
+            services.AddAuthorization(options => {
                 options.AddPolicy("Bearer", (policy) => {
                     policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
                     policy.RequireAuthenticatedUser();
@@ -57,23 +58,13 @@ namespace SampleProject.Api
 
             services.AddSingleton<IAuthorizationHandler, JwtAuthorizationHandler>();
 
-            services.AddAuthentication(options => {
-                options.DefaultScheme = "SampleProjectAuthentication";
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options => {
                 options.RequireHttpsMetadata = false;
                 options.SaveToken = true;
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
-            })
-            .AddScheme<AuthenticationSchemeOptions, SampleProjectAuthenticationHandler>("SampleProjectAuthentication", null); ;
+                options.IncludeErrorDetails = true;
+                options.TokenValidationParameters = jwtBuilder.BuildTokenValidationParameters();
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

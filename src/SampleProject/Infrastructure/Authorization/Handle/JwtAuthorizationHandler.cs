@@ -23,6 +23,8 @@ namespace SampleProject.Infrastructure.Authorization.Handle
 
             var userIdentity = context.User.Identity;
 
+            // pode ser feito a validação do token, mesmo que valido (não expirado e assinatura correta), esta bloqueado no banco de dados ou algum outro lugar.
+
             context.Succeed(requirement);
 
             await Task.CompletedTask;

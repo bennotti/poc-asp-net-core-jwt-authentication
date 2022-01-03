@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using SampleProject.Core.Dto;
 using SampleProject.Core.Settings;
+using SampleProject.Infrastructure.Authentication;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -20,13 +21,13 @@ namespace SampleProject.Api.Controllers
     {
         
         private readonly ILogger<JwtAuthenticationController> _logger;
-        private readonly JwtSettings _jwtSettings;
+        private readonly JwtBuilder _jwtBuilder;
 
         public JwtAuthenticationController(ILogger<JwtAuthenticationController> logger,
-            JwtSettings jwtSettings)
+            JwtBuilder jwtBuilder)
         {
             _logger = logger;
-            _jwtSettings = jwtSettings;
+            _jwtBuilder = jwtBuilder;
         }
 
         [HttpGet]
@@ -35,22 +36,9 @@ namespace SampleProject.Api.Controllers
         {
             _logger.LogInformation("Gerando token JWT");
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
-            var dataExpiracao = DateTime.UtcNow.AddMinutes(30);
+            var jwtBuilder = _jwtBuilder.AddClaim(ClaimTypes.Sid, "VALOR_SID");
 
-            var claims = new List<Claim> {
-                new Claim(ClaimTypes.Sid, "VALOR_SID")
-            };
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = dataExpiracao,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var tokenString = tokenHandler.WriteToken(token);
+            var tokenString = jwtBuilder.BuildToken();
 
             return new JwtResponseDto
             {

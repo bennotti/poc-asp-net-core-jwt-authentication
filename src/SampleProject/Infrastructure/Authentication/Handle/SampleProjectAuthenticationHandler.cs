@@ -39,36 +39,13 @@ namespace SampleProject.Infrastructure.Authentication.Handle
 
             if (endpoint?.Metadata?.GetMetadata<IAuthorizeData>() == null) return AuthenticateResult.NoResult();
 
-            try {
-                //var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
-                //var authorization = authHeader.Parameter?.Split(" ").Last();
-                //if (string.IsNullOrEmpty(authorization)) {
-                //    return AuthenticateResult.Fail("Invalid Authorization");
-                //}
-                //var tokenHandler = new JwtSecurityTokenHandler();
-                //var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
-                //tokenHandler.ValidateToken(authorization, new TokenValidationParameters {
-                //    ValidateIssuerSigningKey = true,
-                //    IssuerSigningKey = new SymmetricSecurityKey(key),
-                //    ValidateIssuer = false,
-                //    ValidateAudience = false,
-                //    // definir clockskew para zero para que os tokens expirem exatamente no tempo de expiração do token(em vez de 5 minutos depois)
-                //    ClockSkew = TimeSpan.Zero,
-                //    SaveSigninToken = true
-                //}, out SecurityToken validatedToken);
+            // pode ser feito a validação do token, mesmo que valido (não expirado e assinatura correta), esta bloqueado no banco de dados ou algum outro lugar.
 
-                //var credentialBytes = Convert.FromBase64String(authHeader.Parameter);
-                //var credentials = Encoding.UTF8.GetString(credentialBytes).Split(new[] { ':' }, 2);
-                //var username = credentials[0];
-                //var password = credentials[1];
-                //if (username != "teste" || password != "teste")
-                //{
-                //    return AuthenticateResult.Fail("Invalid Username or Password");
-                //}
-            }
-            catch
+            var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
+            var authorization = authHeader.Parameter?.Split(" ").Last();
+            if (string.IsNullOrEmpty(authorization))
             {
-                return AuthenticateResult.Fail("Invalid Authorization Header");
+                return AuthenticateResult.Fail("Invalid Authorization");
             }
 
             var claims = new[] {
